@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle游戏辅助笔记工具</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 综合状态展示 -->
+        <div class="status-section">
+            <h2>当前猜测状态</h2>
+            <div id="status-display" class="status-display"></div>
+            <button id="reset-btn" class="reset-btn">一键重置</button>
+        </div>
+
+        <!-- 配置区域 -->
+        <div class="config-section">
+            <div class="config-options">
+                <div class="config-item">
+                    <label for="answer-length">答案单词长度:</label>
+                    <input type="number" id="answer-length" min="4" max="10" value="5">
+                </div>
+                <div class="config-item">
+                    <label for="guess-min-length">猜测单词最小长度:</label>
+                    <input type="number" id="guess-min-length" min="4" max="10" value="4">
+                </div>
+                <div class="config-item">
+                    <label for="guess-max-length">猜测单词最大长度:</label>
+                    <input type="number" id="guess-max-length" min="4" max="10" value="10">
+                </div>
+            </div>
+        </div>
+
+        <!-- 中心功能区域 -->
+        <div class="main-section">
+            <!-- 猜词记录区域 -->
+            <div class="guesses-section">
+                <h2>猜词记录</h2>
+                <div id="guesses-container" class="guesses-container">
+                    <div id="guesses-list" class="guesses-list"></div>
+                    <div class="add-guess-area">
+                        <input type="text" id="new-word" class="word-input" placeholder="输入猜测单词">
+                        <div class="feedback-controls">
+                            <div class="control-group">
+                                <span class="control-label">🟩</span>
+                                <button class="control-btn" id="green-minus">-</button>
+                                <input type="number" id="green-count" class="count-input" min="0" max="10" value="0">
+                                <button class="control-btn" id="green-plus">+</button>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">🟨</span>
+                                <button class="control-btn" id="yellow-minus">-</button>
+                                <input type="number" id="yellow-count" class="count-input" min="0" max="10" value="0">
+                                <button class="control-btn" id="yellow-plus">+</button>
+                            </div>
+                        </div>
+                        <button id="submit-guess" class="submit-btn">提交</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧功能区域 -->
+            <div class="right-section">
+                <!-- 字母状态面板 -->
+                <div class="letters-section">
+                    <h2>字母状态</h2>
+                    <div class="letters-container">
+                        <div class="letter-category" id="must-exist">
+                            <h3>未确定位置的必存在字母</h3>
+                            <div class="letter-buttons"></div>
+                        </div>
+                        <div class="letter-category" id="may-exist">
+                            <h3>可能存在字母</h3>
+                            <div class="letter-buttons"></div>
+                        </div>
+                        <div class="letter-category" id="excluded">
+                            <h3>已排除字母</h3>
+                            <div class="letter-buttons"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 候选词验证器 -->
+                <div class="validator-section">
+                    <h2>候选词验证</h2>
+                    <input type="text" id="candidate-word" placeholder="输入候选词">
+                    <button id="validate-word">验证</button>
+                    <div id="validation-result" class="validation-result"></div>
+                </div>
+
+                <!-- 分享与导入 -->
+                <div class="share-section">
+                    <h2>分享与导入</h2>
+                    <button id="export-data">导出</button>
+                    <div class="import-area">
+                        <textarea id="import-text" placeholder="粘贴导入文本"></textarea>
+                        <button id="import-data">导入</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils/storage.js"></script>
+    <script src="js/utils/parser.js"></script>
+    <script src="js/utils/validator.js"></script>
+    <script src="js/components/status.js"></script>
+    <script src="js/components/config.js"></script>
+    <script src="js/components/guesses.js"></script>
+    <script src="js/components/letters.js"></script>
+    <script src="js/components/validator.js"></script>
+    <script src="js/components/share.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

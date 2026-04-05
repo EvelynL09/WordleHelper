@@ -1,0 +1,252 @@
+/* 组件特定样式 */
+
+/* 状态输入框 */
+.status-input {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    margin: 0 2px;
+    text-transform: uppercase;
+}
+
+.status-input.filled {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+/* 猜测记录行 */
+.guess-row {
+    transition: background-color 0.3s ease;
+}
+
+.guess-row:hover {
+    background-color: #f5f5f5;
+}
+
+/* 字母状态卡片 */
+.letter-category {
+    transition: all 0.3s ease;
+}
+
+.letter-category:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+/* 字母按钮动画 */
+.letter-btn {
+    transition: all 0.2s ease;
+}
+
+.letter-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.letter-btn:active {
+    transform: scale(0.95);
+}
+
+/* 验证结果动画 */
+.validation-result {
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.validation-result.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 分享文本区域 */
+.import-area {
+    transition: all 0.3s ease;
+}
+
+.import-area:focus-within {
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* 配置输入框 */
+.config-item input {
+    transition: all 0.2s ease;
+}
+
+.config-item input:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* 按钮动画 */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* 加载动画 */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #2196f3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 成功/错误消息 */
+.message {
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* 反馈显示和选择器样式 */
+.feedback-display {
+    font-size: 16px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    min-width: 100px;
+}
+
+.feedback-display:hover {
+    background-color: #f0f0f0;
+}
+
+.feedback-selector {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.feedback-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.feedback-option:last-child {
+    margin-bottom: 0;
+}
+
+.feedback-option:hover {
+    background-color: #f0f0f0;
+}
+
+.feedback-option span:first-child {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+/* 单词输入框样式 */
+.word-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    text-transform: lowercase;
+}
+
+.word-input:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .status-input {
+        width: 25px;
+        height: 25px;
+        font-size: 16px;
+    }
+
+    .letter-btn {
+        width: 25px;
+        height: 25px;
+    }
+
+    .feedback-btn {
+        width: 25px;
+        height: 25px;
+    }
+
+    .config-options {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .config-item {
+        width: 100%;
+    }
+
+    .config-item input {
+        flex: 1;
+        max-width: 100px;
+    }
+
+    .feedback-display {
+        font-size: 14px;
+        min-width: 80px;
+    }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+    .letter-btn {
+        border: 2px solid #000;
+    }
+
+    .status-input {
+        border: 2px solid #000;
+    }
+
+    button {
+        border: 2px solid #000;
+    }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
