@@ -59,6 +59,7 @@ window.ValidatorUtil = {
         const guessLower = guess.toLowerCase();
         const answerLower = answer.toLowerCase();
         const letterResults = [];
+        const tempResult = [];
         const answerCounts = {};
         
         // 获取当前颜色反馈配置
@@ -75,39 +76,25 @@ window.ValidatorUtil = {
             answerCounts[char] = (answerCounts[char] || 0) + 1;
         }
         
-        // 先标记绿色（位置正确）
-        const tempAnswer = answerLower.split('');
-        const tempResult = [];
-        
+        // 按照文档逻辑：先判断字母是否存在，再判断位置是否正确
         for (let i = 0; i < guessLower.length; i++) {
-            if (i < answerLower.length && guessLower[i] === answerLower[i]) {
-                tempResult.push(feedback.CORRECT);
-                tempAnswer[i] = null; // 标记为已处理
-                answerCounts[guessLower[i]]--;
-            } else {
-                tempResult.push(undefined);
-            }
-        }
-        
-        // 再标记黄色（存在但位置不正确）和灰色（不存在）
-        for (let i = 0; i < guessLower.length; i++) {
-            if (tempResult[i] === undefined) {
-                const char = guessLower[i];
-                if (answerCounts[char] > 0) {
-                    tempResult[i] = feedback.PRESENT;
-                    answerCounts[char]--;
+            const letter = guessLower[i];
+            
+            // 判断字母是否在答案中存在
+            if (answerLower.includes(letter)) {
+                // 字母存在，判断位置是否正确
+                if (i < answerLower.length && guessLower[i] === answerLower[i]) {
+                    tempResult[i] = feedback.CORRECT;
+                    letterResults.push({ letter: letter, result: feedback.CORRECT });
                 } else {
-                    tempResult[i] = feedback.ABSENT;
+                    tempResult[i] = feedback.PRESENT;
+                    letterResults.push({ letter: letter, result: feedback.PRESENT });
                 }
+            } else {
+                // 字母不存在
+                tempResult[i] = feedback.ABSENT;
+                letterResults.push({ letter: letter, result: feedback.ABSENT });
             }
-        }
-        
-        // 构建每个字母的结果
-        for (let i = 0; i < guessLower.length; i++) {
-            letterResults.push({
-                letter: guessLower[i],
-                result: tempResult[i]
-            });
         }
         
         // 生成合并后的结果
