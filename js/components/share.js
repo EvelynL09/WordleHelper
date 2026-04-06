@@ -1,84 +1,75 @@
-// 分享与导入组件逻辑
-
-class ShareComponent {
-    constructor() {
-        this.exportButton = document.getElementById('export-data');
-        this.importText = document.getElementById('import-text');
-        this.importButton = document.getElementById('import-data');
-    }
-
-    init(guesses, letterStatus, config, onImport) {
-        this.guesses = guesses;
-        this.letterStatus = letterStatus;
-        this.config = config;
-        this.onImport = onImport;
-        this.bindEvents();
-    }
-
-    bindEvents() {
-        this.exportButton.addEventListener('click', () => this.exportData());
-        this.importButton.addEventListener('click', () => this.importData());
-    }
-
-    exportData() {
-        const shareText = generateShareText(this.guesses, this.letterStatus, this.config);
+// 分享导入组件
+window.ShareComponent = {
+    // 初始化
+    init: function() {
+        this.setupEventListeners();
+    },
+    
+    // 设置事件监听器
+    setupEventListeners: function() {
+        // 导出按钮
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            this.exportData();
+        });
+        
+        // 导入按钮
+        document.getElementById('importBtn').addEventListener('click', () => {
+            this.importData();
+        });
+    },
+    
+    // 导出数据
+    exportData: function() {
+        const guesses = StorageUtil.getGuesses();
+        const letterStatus = StorageUtil.getLetterStatus();
+        
+        // 生成分享文本
+        const shareText = ParserUtil.generateShareText(guesses, letterStatus);
+        
+        // 填充到文本框
+        document.getElementById('shareText').value = shareText;
         
         // 复制到剪贴板
-        navigator.clipboard.writeText(shareText).then(() => {
-            this.showMessage('导出成功，已复制到剪贴板！', 'success');
-        }).catch(err => {
-            console.error('复制失败:', err);
-            this.showMessage('导出失败，请手动复制文本', 'error');
-        });
-    }
-
-    importData() {
-        const text = this.importText.value.trim();
-        if (!text) {
-            this.showMessage('请输入要导入的文本', 'error');
+        this.copyToClipboard(shareText);
+        alert('数据已导出并复制到剪贴板');
+    },
+    
+    // 导入数据
+    importData: function() {
+        const shareText = document.getElementById('shareText').value.trim();
+        
+        if (!shareText) {
+            alert('请粘贴分享文本');
             return;
         }
-
-        const parsedData = parseShareText(text);
-        if (parsedData) {
-            this.onImport(parsedData);
-            this.importText.value = '';
-            this.showMessage('导入成功！', 'success');
-        } else {
-            this.showMessage('导入失败，请检查文本格式', 'error');
+        
+        try {
+            // 解析分享文本
+            const { guesses, letterStatus } = ParserUtil.parseShareText(shareText);
+            
+            // 保存数据
+            StorageUtil.saveGuesses(guesses);
+            StorageUtil.saveLetterStatus(letterStatus);
+            
+            // 通知主应用数据已更新
+            if (window.App) {
+                window.App.onDataImported();
+            }
+            
+            alert('数据导入成功');
+        } catch (error) {
+            alert('导入失败，请检查分享文本格式');
+            console.error('导入错误:', error);
         }
+    },
+    
+    // 复制到剪贴板
+    copyToClipboard: function(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
     }
-
-    showMessage(message, type) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${type}`;
-        messageElement.textContent = message;
-        
-        const shareSection = document.querySelector('.share-section');
-        shareSection.appendChild(messageElement);
-        
-        // 3秒后自动移除
-        setTimeout(() => {
-            messageElement.remove();
-        }, 3000);
-    }
-
-    updateGuesses(guesses) {
-        this.guesses = guesses;
-    }
-
-    updateLetterStatus(letterStatus) {
-        this.letterStatus = letterStatus;
-    }
-
-    updateConfig(config) {
-        this.config = config;
-    }
-
-    clear() {
-        this.importText.value = '';
-    }
-}
-
-// 暴露全局类
-window.ShareComponent = ShareComponent;
+};

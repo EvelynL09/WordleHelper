@@ -1,134 +1,147 @@
-// 字母状态组件逻辑
-
-class LettersComponent {
-    constructor() {
-        this.lettersContainer = {
-            mustExist: document.querySelector('#must-exist .letter-buttons'),
-            mayExist: document.querySelector('#may-exist .letter-buttons'),
-            excluded: document.querySelector('#excluded .letter-buttons')
-        };
-        this.letterStatus = loadLetterStatus();
-        this.letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
-    }
-
-    init(onLetterStatusChange) {
-        this.onLetterStatusChange = onLetterStatusChange;
-        this.render();
-    }
-
-    render() {
-        Object.values(this.lettersContainer).forEach(container => {
-            container.innerHTML = '';
-        });
-
-        this.letters.forEach(letter => {
-            const status = this.letterStatus[letter];
-            const button = this.createLetterButton(letter, status);
-            
-            let container;
-            if (status === 'excluded') {
-                container = this.lettersContainer.excluded;
-            } else if (status === 'must-exist' || status === 0) {
-                container = this.lettersContainer.mustExist;
-            } else {
-                container = this.lettersContainer.mayExist;
+// 字母状态组件
+window.LettersComponent = {
+    // 初始化
+    init: function() {
+        this.renderLetters();
+    },
+    
+    // 渲染字母状态
+    renderLetters: function() {
+        const letterStatus = StorageUtil.getLetterStatus();
+        
+        // 分类字母
+        const existLetters = [];
+        const possibleLetters = [];
+        const excludedLetters = [];
+        
+        Object.entries(letterStatus).forEach(([letter, status]) => {
+            if (status.exists === 1) {
+                existLetters.push({ letter, status });
+            } else if (status.exists === 0) {
+                excludedLetters.push({ letter, status });
+            } else if (status.exists === -1 && status.excludedPositions.length > 0) {
+                possibleLetters.push({ letter, status });
             }
+        });
+        
+        // 渲染必存在字母
+        this.renderLetterList('existLetters', existLetters, 'exist');
+        
+        // 渲染可能存在字母
+        this.renderLetterList('possibleLetters', possibleLetters, 'possible');
+        
+        // 渲染已排除字母
+        this.renderLetterList('excludedLetters', excludedLetters, 'excluded');
+    },
+    
+    // 渲染字母列表
+    renderLetterList: function(containerId, letters, type) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        
+        letters.forEach(({ letter, status }) => {
+            const letterItem = document.createElement('div');
+            letterItem.className = `letter-item ${type}`;
+            letterItem.textContent = letter;
+            letterItem.title = this.getLetterTooltip(letter, status);
             
-            container.appendChild(button);
+            // 左键点击切换状态
+            letterItem.addEventListener('click', () => {
+                this.toggleLetterStatus(letter);
+            });
+            
+            // 右键点击标记为已排除
+            letterItem.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.markAsExcluded(letter);
+            });
+            
+            container.appendChild(letterItem);
         });
-    }
-
-    createLetterButton(letter, status) {
-        const button = document.createElement('button');
-        button.className = 'letter-btn';
+    },
+    
+    // 获取字母提示信息
+    getLetterTooltip: function(letter, status) {
+        let tooltip = `字母: ${letter}\n`;
         
-        if (status === 'excluded') {
-            button.classList.add('excluded');
-        } else if (status === 'must-exist' || status === 0) {
-            button.classList.add('must-exist');
-        } else if (typeof status === 'number' && status > 0) {
-            button.classList.add('position-fixed');
-        }
-        
-        button.textContent = letter.toUpperCase();
-        
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.handleLetterClick(letter);
-        });
-        
-        button.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            this.handleRightClick(letter);
-        });
-        
-        return button;
-    }
-
-    handleLetterClick(letter) {
-        const currentStatus = this.letterStatus[letter];
-        let newStatus;
-
-        if (currentStatus === 'excluded') {
-            newStatus = 'unknown';
-        } else if (currentStatus === 'must-exist' || currentStatus === 0) {
-            newStatus = 'unknown';
-        } else if (typeof currentStatus === 'number' && currentStatus > 0) {
-            newStatus = 'unknown';
+        if (status.exists === 1) {
+            tooltip += '状态: 必存在\n';
+        } else if (status.exists === 0) {
+            tooltip += '状态: 已排除\n';
         } else {
-            newStatus = 'must-exist';
+            tooltip += '状态: 可能存在\n';
         }
-
-        this.letterStatus[letter] = newStatus;
-        this.saveLetterStatus();
-        this.render();
-        this.onLetterStatusChange && this.onLetterStatusChange(this.letterStatus);
-    }
-
-    handleRightClick(letter) {
-        this.letterStatus[letter] = 'excluded';
-        this.saveLetterStatus();
-        this.render();
-        this.onLetterStatusChange && this.onLetterStatusChange(this.letterStatus);
-    }
-
-    saveLetterStatus() {
-        const validation = validateLetterStatus(this.letterStatus);
-        if (validation.valid) {
-            saveLetterStatus(this.letterStatus);
-        }
-    }
-
-    getLetterStatus() {
-        return this.letterStatus;
-    }
-
-    updateLetterStatus(letterStatus) {
-        this.letterStatus = letterStatus;
-        this.saveLetterStatus();
-        this.render();
-        // 移除对 onLetterStatusChange 的调用，避免循环依赖
-        // this.onLetterStatusChange && this.onLetterStatusChange(this.letterStatus);
-    }
-
-    updateFromCurrentStatus(currentStatus) {
-        const newLetterStatus = { ...this.letterStatus };
         
-        currentStatus.forEach((letter, index) => {
-            if (letter) {
-                newLetterStatus[letter] = index + 1;
+        if (status.position > 0) {
+            tooltip += `位置: ${status.position}\n`;
+        }
+        
+        if (status.excludedPositions.length > 0) {
+            tooltip += `排除位置: ${status.excludedPositions.join(', ')}\n`;
+        }
+        
+        return tooltip;
+    },
+    
+    // 切换字母状态
+    toggleLetterStatus: function(letter) {
+        const letterStatus = StorageUtil.getLetterStatus();
+        const currentStatus = letterStatus[letter].exists;
+        
+        if (currentStatus === -1) {
+            // 不确定 -> 必存在
+            letterStatus[letter].exists = 1;
+        } else if (currentStatus === 1) {
+            // 必存在 -> 可能存在
+            letterStatus[letter].exists = -1;
+            letterStatus[letter].position = 0;
+        } else if (currentStatus === 0) {
+            // 已排除 -> 可能存在
+            letterStatus[letter].exists = -1;
+            letterStatus[letter].position = 0;
+            letterStatus[letter].excludedPositions = [];
+        }
+        
+        StorageUtil.saveLetterStatus(letterStatus);
+        this.renderLetters();
+        
+        // 通知主应用字母状态已更新
+        if (window.App) {
+            window.App.onLetterStatusChange();
+        }
+    },
+    
+    // 标记字母为已排除
+    markAsExcluded: function(letter) {
+        const letterStatus = StorageUtil.getLetterStatus();
+        
+        if (letterStatus[letter].exists === 1) {
+            if (!confirm(`字母 ${letter} 被标记为必存在，确定要标记为排除吗？`)) {
+                return;
             }
-        });
+        }
         
-        this.updateLetterStatus(newLetterStatus);
+        letterStatus[letter].exists = 0;
+        letterStatus[letter].position = -1;
+        letterStatus[letter].excludedPositions = [];
+        
+        StorageUtil.saveLetterStatus(letterStatus);
+        this.renderLetters();
+        
+        // 通知主应用字母状态已更新
+        if (window.App) {
+            window.App.onLetterStatusChange();
+        }
+    },
+    
+    // 获取字母状态
+    getLetterStatus: function() {
+        return StorageUtil.getLetterStatus();
+    },
+    
+    // 设置字母状态
+    setLetterStatus: function(letterStatus) {
+        StorageUtil.saveLetterStatus(letterStatus);
+        this.renderLetters();
     }
-
-    clear() {
-        this.letterStatus = {};
-        this.saveLetterStatus();
-        this.render();
-        this.onLetterStatusChange && this.onLetterStatusChange(this.letterStatus);
-    }
-}
-
-window.LettersComponent = LettersComponent;
+};

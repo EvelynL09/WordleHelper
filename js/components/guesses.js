@@ -1,343 +1,291 @@
-// 猜词记录组件逻辑
-
-class GuessesComponent {
-    constructor() {
-        this.guessesList = document.getElementById('guesses-list');
-        this.newWordInput = document.getElementById('new-word');
-        this.greenMinusBtn = document.getElementById('green-minus');
-        this.greenPlusBtn = document.getElementById('green-plus');
-        this.greenCountDisplay = document.getElementById('green-count');
-        this.yellowMinusBtn = document.getElementById('yellow-minus');
-        this.yellowPlusBtn = document.getElementById('yellow-plus');
-        this.yellowCountDisplay = document.getElementById('yellow-count');
-        this.submitBtn = document.getElementById('submit-guess');
-        
-        this.guesses = loadGuesses();
-        this.greenCount = 0;
-        this.yellowCount = 0;
-        this.letterStatus = {};
-        this.editingIndex = -1; // 用于跟踪当前正在编辑的猜测索引
-        this.onLetterStatusChange = null;
-    }
-
-    init(config, onGuessesChange, onLetterStatusChange) {
-        this.config = config;
-        this.onGuessesChange = onGuessesChange;
-        this.onLetterStatusChange = onLetterStatusChange;
-        this.render();
-        this.bindEvents();
-    }
-
-    render() {
-        this.guessesList.innerHTML = '';
-        
-        this.guesses.forEach((guess, index) => {
-            const row = this.createGuessRow(guess, index);
-            this.guessesList.appendChild(row);
+// 猜词记录组件
+window.GuessesComponent = {
+    // 初始化
+    init: function() {
+        this.setupEventListeners();
+        this.loadGuesses();
+        this.setupDragAndDrop();
+    },
+    
+    // 设置事件监听器
+    setupEventListeners: function() {
+        // 添加猜词按钮
+        document.getElementById('addGuessBtn').addEventListener('click', () => {
+            this.addGuess();
         });
         
-        this.updateCountDisplays();
-    }
-
-    createGuessRow(guess, index) {
-        const row = document.createElement('div');
-        row.className = 'guess-row';
-        row.draggable = true;
-        row.dataset.index = index;
-        
-        // 添加拖动排序按钮
-        const dragHandle = document.createElement('div');
-        dragHandle.className = 'drag-handle';
-        dragHandle.textContent = '☰';
-        
-        const wordContainer = document.createElement('div');
-        wordContainer.className = 'guess-word';
-        
-        guess.word.split('').forEach((char, charIndex) => {
-            const letterSpan = document.createElement('span');
-            letterSpan.className = 'letter';
-            letterSpan.textContent = char;
-            letterSpan.dataset.char = char;
-            letterSpan.dataset.index = charIndex;
-            this.applyLetterStyle(letterSpan, char);
-            wordContainer.appendChild(letterSpan);
-        });
-        
-        const feedbackContainer = document.createElement('div');
-        feedbackContainer.className = 'guess-feedback';
-        feedbackContainer.textContent = this.getFeedbackEmoji(guess);
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'guess-delete';
-        deleteBtn.textContent = '删除';
-        deleteBtn.addEventListener('click', () => this.deleteGuess(index));
-        
-        const editBtn = document.createElement('button');
-        editBtn.className = 'guess-edit';
-        editBtn.textContent = '编辑';
-        editBtn.addEventListener('click', () => this.editGuess(index));
-        
-        // 添加拖动事件监听器
-        row.addEventListener('dragstart', (e) => this.handleDragStart(e, index));
-        row.addEventListener('dragover', (e) => this.handleDragOver(e));
-        row.addEventListener('drop', (e) => this.handleDrop(e, index));
-        
-        row.appendChild(dragHandle);
-        row.appendChild(wordContainer);
-        row.appendChild(feedbackContainer);
-        row.appendChild(editBtn);
-        row.appendChild(deleteBtn);
-        
-        return row;
-    }
-    
-    handleDragStart(e, index) {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', index);
-        e.target.classList.add('dragging');
-    }
-    
-    handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        return false;
-    }
-    
-    handleDrop(e, dropIndex) {
-        e.preventDefault();
-        const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
-        
-        if (dragIndex !== dropIndex) {
-            // 重新排序猜测记录
-            const [movedGuess] = this.guesses.splice(dragIndex, 1);
-            this.guesses.splice(dropIndex, 0, movedGuess);
-            
-            // 保存并重新渲染
-            this.saveGuesses();
-            this.render();
-            this.onGuessesChange && this.onGuessesChange(this.guesses);
-        }
-        
-        e.target.classList.remove('dragging');
-        return false;
-    }
-
-    applyLetterStyle(element, char) {
-        const status = this.letterStatus[char] || 'unknown';
-        
-        element.classList.remove('excluded', 'correct', 'present');
-        
-        if (status === 'excluded') {
-            element.classList.add('excluded');
-        } else if (typeof status === 'number' && status > 0) {
-            element.classList.add('correct');
-        } else if (status === 'must-exist' || status === 0) {
-            element.classList.add('present');
-        }
-    }
-
-    getFeedbackEmoji(guess) {
-        if (guess.green === 0 && guess.yellow === 0) {
-            return '⬜';
-        }
-        return '🟩'.repeat(guess.green) + '🟨'.repeat(guess.yellow);
-    }
-
-    bindEvents() {
-        this.greenMinusBtn.addEventListener('click', () => this.adjustCount('green', -1));
-        this.greenPlusBtn.addEventListener('click', () => this.adjustCount('green', 1));
-        this.yellowMinusBtn.addEventListener('click', () => this.adjustCount('yellow', -1));
-        this.yellowPlusBtn.addEventListener('click', () => this.adjustCount('yellow', 1));
-        this.greenCountDisplay.addEventListener('input', (e) => this.handleDirectInput('green', e));
-        this.yellowCountDisplay.addEventListener('input', (e) => this.handleDirectInput('yellow', e));
-        this.submitBtn.addEventListener('click', () => this.submitGuess());
-        this.newWordInput.addEventListener('keypress', (e) => {
+        // 回车键提交
+        document.getElementById('newGuessInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                this.submitGuess();
+                this.addGuess();
             }
         });
-        this.newWordInput.addEventListener('paste', (e) => {
-            setTimeout(() => this.handlePaste(), 0);
-        });
-    }
-
-    handleDirectInput(type, e) {
-        let value = parseInt(e.target.value) || 0;
-        value = Math.max(0, Math.min(10, value));
-        if (type === 'green') {
-            this.greenCount = value;
-        } else {
-            this.yellowCount = value;
-        }
-        this.updateCountDisplays();
-    }
-
-    handlePaste() {
-        const text = this.newWordInput.value.trim();
-        const match = text.match(/^([a-z]+)\s+([⬜🟩🟨]+)$/i);
         
-        if (match) {
-            const word = match[1].toLowerCase();
-            const emojis = match[2];
+        // 绿色计数加减
+        document.getElementById('greenMinus').addEventListener('click', () => {
+            this.updateCount('greenCount', -1);
+        });
+        document.getElementById('greenPlus').addEventListener('click', () => {
+            this.updateCount('greenCount', 1);
+        });
+        
+        // 黄色计数加减
+        document.getElementById('yellowMinus').addEventListener('click', () => {
+            this.updateCount('yellowCount', -1);
+        });
+        document.getElementById('yellowPlus').addEventListener('click', () => {
+            this.updateCount('yellowCount', 1);
+        });
+    },
+    
+    // 更新计数
+    updateCount: function(id, delta) {
+        const input = document.getElementById(id);
+        const currentValue = parseInt(input.value) || 0;
+        const newValue = Math.max(0, currentValue + delta);
+        input.value = newValue;
+    },
+    
+    // 加载猜词记录
+    loadGuesses: function() {
+        const guesses = StorageUtil.getGuesses();
+        this.renderGuesses(guesses);
+    },
+    
+    // 渲染猜词记录
+    renderGuesses: function(guesses) {
+        const guessesList = document.getElementById('guessesList');
+        guessesList.innerHTML = '';
+        
+        guesses.forEach((guess, index) => {
+            const guessItem = document.createElement('div');
+            guessItem.className = 'guess-item';
+            guessItem.dataset.index = index;
             
-            let green = 0;
-            let yellow = 0;
+            // 拖动按钮
+            const dragBtn = document.createElement('button');
+            dragBtn.className = 'guess-actions-btn drag-btn';
+            dragBtn.textContent = '☰';
+            dragBtn.draggable = true;
             
-            for (const emoji of emojis) {
-                if (emoji === '🟩') green++;
-                else if (emoji === '🟨') yellow++;
-            }
+            // 猜词单词
+            const wordSpan = document.createElement('span');
+            wordSpan.className = 'guess-word';
+            wordSpan.textContent = guess.word;
             
-            this.newWordInput.value = word;
-            this.greenCount = green;
-            this.yellowCount = yellow;
-            this.updateCountDisplays();
-        }
-    }
-
-    adjustCount(type, delta) {
-        if (type === 'green') {
-            this.greenCount = Math.max(0, this.greenCount + delta);
-        } else {
-            this.yellowCount = Math.max(0, this.yellowCount + delta);
-        }
-        this.updateCountDisplays();
-    }
-
-    updateCountDisplays() {
-        this.greenCountDisplay.value = this.greenCount;
-        this.yellowCountDisplay.value = this.yellowCount;
-    }
-
-    submitGuess() {
-        const word = this.newWordInput.value.trim().toLowerCase();
+            // 反馈emoji
+            const feedbackSpan = document.createElement('span');
+            feedbackSpan.className = 'guess-feedback';
+            feedbackSpan.textContent = guess.feedback;
+            
+            // 操作按钮
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'guess-actions';
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'guess-actions-btn';
+            editBtn.textContent = '编辑';
+            editBtn.addEventListener('click', () => {
+                this.editGuess(index);
+            });
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'guess-actions-btn';
+            deleteBtn.textContent = '删除';
+            deleteBtn.addEventListener('click', () => {
+                this.deleteGuess(index);
+            });
+            
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(deleteBtn);
+            
+            guessItem.appendChild(dragBtn);
+            guessItem.appendChild(wordSpan);
+            guessItem.appendChild(feedbackSpan);
+            guessItem.appendChild(actionsDiv);
+            
+            guessesList.appendChild(guessItem);
+        });
+        
+        // 重新设置拖放事件
+        this.setupDragAndDrop();
+    },
+    
+    // 添加猜词记录
+    addGuess: function() {
+        const wordInput = document.getElementById('newGuessInput');
+        const greenInput = document.getElementById('greenCount');
+        const yellowInput = document.getElementById('yellowCount');
+        
+        const word = wordInput.value.toLowerCase().trim();
+        const green = parseInt(greenInput.value) || 0;
+        const yellow = parseInt(yellowInput.value) || 0;
         
         if (!word) {
             alert('请输入猜测单词');
             return;
         }
         
-        if (word.length < this.config.guessMinLength || word.length > this.config.guessMaxLength) {
-            alert(`单词长度必须在 ${this.config.guessMinLength} 到 ${this.config.guessMaxLength} 之间`);
+        // 验证单词长度
+        const { min, max } = ConfigComponent.getGuessLengthRange();
+        if (!ValidatorUtil.validateWordLength(word, min, max)) {
+            alert(`单词长度应在${min}-${max}之间`);
             return;
         }
         
-        if (this.greenCount + this.yellowCount > word.length) {
-            alert('🟩和🟨的总数不能超过单词长度');
+        // 验证是否为字母
+        if (!ValidatorUtil.validateLetters(word)) {
+            alert('单词只能包含字母');
             return;
         }
         
-        const newGuess = {
+        // 生成反馈emoji
+        const feedback = ParserUtil.generateFeedback(word, green, yellow);
+        
+        // 添加到猜词记录
+        const guesses = StorageUtil.getGuesses();
+        guesses.push({
             word: word,
-            green: this.greenCount,
-            yellow: this.yellowCount
-        };
+            green: green,
+            yellow: yellow,
+            feedback: feedback
+        });
         
-        // 处理情况A：⬜ - 所有字母都不在答案中
-        if (this.greenCount === 0 && this.yellowCount === 0) {
-            let needsConfirmation = false;
-            const lettersToExclude = word.split('');
-            
-            // 检查是否有字母当前状态为必定存在
-            for (const letter of lettersToExclude) {
-                const currentStatus = this.letterStatus[letter];
-                if (currentStatus === 'must-exist' || (typeof currentStatus === 'number' && currentStatus > 0)) {
-                    needsConfirmation = true;
-                    break;
+        StorageUtil.saveGuesses(guesses);
+        this.renderGuesses(guesses);
+        
+        // 更新字母状态
+        this.updateLetterStatus(word, green, yellow);
+        
+        // 清空输入
+        wordInput.value = '';
+        greenInput.value = '0';
+        yellowInput.value = '0';
+    },
+    
+    // 编辑猜词记录
+    editGuess: function(index) {
+        const guesses = StorageUtil.getGuesses();
+        const guess = guesses[index];
+        
+        document.getElementById('newGuessInput').value = guess.word;
+        document.getElementById('greenCount').value = guess.green;
+        document.getElementById('yellowCount').value = guess.yellow;
+        
+        // 删除原记录
+        this.deleteGuess(index);
+    },
+    
+    // 删除猜词记录
+    deleteGuess: function(index) {
+        const guesses = StorageUtil.getGuesses();
+        guesses.splice(index, 1);
+        StorageUtil.saveGuesses(guesses);
+        this.renderGuesses(guesses);
+        
+        // 重新计算字母状态
+        this.recalculateLetterStatus();
+    },
+    
+    // 更新字母状态
+    updateLetterStatus: function(word, green, yellow) {
+        const letterStatus = StorageUtil.getLetterStatus();
+        
+        if (green === 0 && yellow === 0) {
+            // 情况A：所有字母都不存在
+            for (const char of word) {
+                if (letterStatus[char].exists === 1) {
+                    if (!confirm(`字母 ${char} 被标记为必存在，确定要标记为排除吗？`)) {
+                        return;
+                    }
+                }
+                letterStatus[char].exists = 0;
+                letterStatus[char].position = -1;
+                letterStatus[char].excludedPositions = [];
+            }
+        } else if (yellow > 0 && green === 0) {
+            // 情况B：只有黄色
+            for (let i = 0; i < word.length; i++) {
+                const char = word[i];
+                const position = i + 1;
+                if (!letterStatus[char].excludedPositions.includes(position)) {
+                    letterStatus[char].excludedPositions.push(position);
+                }
+                if (letterStatus[char].exists === -1) {
+                    letterStatus[char].exists = 1;
                 }
             }
-            
-            if (needsConfirmation) {
-                const confirmed = confirm('猜测单词中的某些字母当前标记为必定存在，确定要将它们标记为已排除吗？');
-                if (!confirmed) {
-                    return;
-                }
+        } else if (green + yellow === word.length) {
+            // 情况C：所有字母都存在
+            for (const char of word) {
+                letterStatus[char].exists = 1;
             }
-            
-            // 将所有字母标记为已排除
-            for (const letter of lettersToExclude) {
-                this.letterStatus[letter] = 'excluded';
-            }
-        } else {
-            // 处理情况B：n个🟩+m个🟨 - 有字母在答案中
-            // 根据需求，因为无法确定哪些字母，所以不要因为情况B而改变字母状态
         }
         
-        this.guesses.push(newGuess);
-        this.saveGuesses();
-        this.render();
-        this.onGuessesChange && this.onGuessesChange(this.guesses);
-        // 通知其他组件字母状态已更新
-        this.onLetterStatusChange && this.onLetterStatusChange(this.letterStatus);
+        StorageUtil.saveLetterStatus(letterStatus);
         
-        this.newWordInput.value = '';
-        this.greenCount = 0;
-        this.yellowCount = 0;
-        this.updateCountDisplays();
-        this.newWordInput.focus();
-    }
-
-    deleteGuess(index) {
-        this.guesses.splice(index, 1);
-        this.saveGuesses();
-        this.render();
-        this.onGuessesChange && this.onGuessesChange(this.guesses);
-    }
-
-    editGuess(index) {
-        const guess = this.guesses[index];
+        // 通知主应用字母状态已更新
+        if (window.App) {
+            window.App.onLetterStatusChange();
+        }
+    },
+    
+    // 重新计算字母状态
+    recalculateLetterStatus: function() {
+        const guesses = StorageUtil.getGuesses();
+        const letterStatus = StorageUtil.getDefaultLetterStatus();
         
-        // 将猜测的单词和反馈值填充到输入框和计数器中
-        this.newWordInput.value = guess.word;
-        this.greenCount = guess.green;
-        this.yellowCount = guess.yellow;
-        this.updateCountDisplays();
-        
-        // 从guesses数组中移除该猜测
-        this.guesses.splice(index, 1);
-        this.saveGuesses();
-        this.render();
-        
-        // 聚焦到输入框，方便用户编辑
-        this.newWordInput.focus();
-    }
-
-    saveGuesses() {
-        const validGuesses = this.guesses.filter(guess => {
-            const validation = validateGuess(guess, this.config);
-            return validation.valid;
+        guesses.forEach(guess => {
+            this.updateLetterStatus(guess.word, guess.green, guess.yellow);
         });
-        saveGuesses(validGuesses);
+    },
+    
+    // 设置拖放功能
+    setupDragAndDrop: function() {
+        const guessItems = document.querySelectorAll('.guess-item');
+        let draggedItem = null;
+        
+        guessItems.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                draggedItem = item;
+                item.classList.add('dragging');
+            });
+            
+            item.addEventListener('dragend', (e) => {
+                item.classList.remove('dragging');
+                draggedItem = null;
+            });
+            
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (draggedItem !== item) {
+                    const guesses = StorageUtil.getGuesses();
+                    const draggedIndex = parseInt(draggedItem.dataset.index);
+                    const targetIndex = parseInt(item.dataset.index);
+                    
+                    const [draggedGuess] = guesses.splice(draggedIndex, 1);
+                    guesses.splice(targetIndex, 0, draggedGuess);
+                    
+                    StorageUtil.saveGuesses(guesses);
+                    this.renderGuesses(guesses);
+                }
+            });
+        });
+    },
+    
+    // 获取猜词记录
+    getGuesses: function() {
+        return StorageUtil.getGuesses();
+    },
+    
+    // 设置猜词记录
+    setGuesses: function(guesses) {
+        StorageUtil.saveGuesses(guesses);
+        this.renderGuesses(guesses);
+        this.recalculateLetterStatus();
     }
-
-    getGuesses() {
-        return this.guesses;
-    }
-
-    updateGuesses(guesses) {
-        this.guesses = guesses;
-        this.saveGuesses();
-        this.render();
-        this.onGuessesChange && this.onGuessesChange(this.guesses);
-    }
-
-    updateConfig(config) {
-        this.config = config;
-        this.saveGuesses();
-        this.render();
-    }
-
-    updateLetterStatus(letterStatus) {
-        this.letterStatus = letterStatus;
-        this.render();
-    }
-
-    clear() {
-        this.guesses = [];
-        this.saveGuesses();
-        this.render();
-        this.onGuessesChange && this.onGuessesChange(this.guesses);
-    }
-}
-
-window.GuessesComponent = GuessesComponent;
+};
