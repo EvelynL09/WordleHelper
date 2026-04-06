@@ -18,12 +18,14 @@ window.ParserUtil = {
             
             if (parsingGuesses) {
                 // 解析猜词记录
-                const match = trimmedLine.match(/^([a-z]+)\s+([🟩🟨⬜]+)$/i);
+                const match = trimmedLine.match(/^([a-z]+)\s+([🟩🟨⬜●○×]+)$/i);
                 if (match) {
                     const word = match[1].toLowerCase();
                     const feedback = match[2];
-                    const greenCount = (feedback.match(/🟩/g) || []).length;
-                    const yellowCount = (feedback.match(/🟨/g) || []).length;
+                    
+                    // 计算正确和存在的数量
+                    const greenCount = (feedback.match(/🟩|●/g) || []).length;
+                    const yellowCount = (feedback.match(/🟨|○/g) || []).length;
                     
                     guesses.push({
                         word: word,

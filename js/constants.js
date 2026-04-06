@@ -30,7 +30,7 @@ window.Constants = {
         CUSTOM: {
             CORRECT: '●',
             PRESENT: '○',
-            ABSENT: '⬜'
+            ABSENT: '×'
         }
     },
     

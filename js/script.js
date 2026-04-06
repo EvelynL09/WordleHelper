@@ -2,6 +2,9 @@
 window.App = {
     // 初始化
     init: function() {
+        // 解析URL参数
+        this.parseUrlParams();
+        
         // 初始化各个组件
         StatusComponent.init();
         ConfigComponent.init();
@@ -15,6 +18,56 @@ window.App = {
         
         // 应用当前模式
         this.applyMode(StorageUtil.getMode());
+    },
+    
+    // 解析URL参数
+    parseUrlParams: function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // 解析模式参数
+        const mode = urlParams.get('mode');
+        if (mode === 'guess' || mode === 'judge') {
+            StorageUtil.saveMode(mode === 'judge' ? window.Constants.MODES.JUDGE : window.Constants.MODES.NOTE);
+        }
+        
+        // 解析颜色反馈配置参数
+        const feedbackSet = urlParams.get('feedback_set');
+        if (feedbackSet === 'default' || feedbackSet === 'custom') {
+            StorageUtil.saveFeedbackPreset(feedbackSet === 'custom' ? 'CUSTOM' : 'DEFAULT');
+        }
+        
+        // 解析答案单词长度参数
+        const length = urlParams.get('length');
+        if (length) {
+            const len = parseInt(length);
+            if (len >= 4 && len <= 10) {
+                const config = StorageUtil.getConfig();
+                config.answerLength = len;
+                StorageUtil.setConfig(config);
+            }
+        }
+        
+        // 解析猜测单词最小长度参数
+        const minLength = urlParams.get('minLength');
+        if (minLength) {
+            const min = parseInt(minLength);
+            if (min >= 4 && min <= 10) {
+                const config = StorageUtil.getConfig();
+                config.minGuessLength = min;
+                StorageUtil.setConfig(config);
+            }
+        }
+        
+        // 解析猜测单词最大长度参数
+        const maxLength = urlParams.get('maxLength');
+        if (maxLength) {
+            const max = parseInt(maxLength);
+            if (max >= 4 && max <= 10) {
+                const config = StorageUtil.getConfig();
+                config.maxGuessLength = max;
+                StorageUtil.setConfig(config);
+            }
+        }
     },
     
     // 初始化出题人辅助判定模式
@@ -47,22 +100,23 @@ window.App = {
             return;
         }
         
-        // 验证单词长度
-        const answerLength = ConfigComponent.getAnswerLength();
-        if (answer.length !== answerLength) {
-            alert(`答案长度应为${answerLength}个字母`);
-            return;
-        }
-        
         // 验证是否为字母
         if (!ValidatorUtil.validateLetters(answer)) {
             alert('答案只能包含字母');
             return;
         }
         
+        // 自动调整答案单词长度配置
+        const config = StorageUtil.getConfig();
+        config.answerLength = answer.length;
+        StorageUtil.saveConfig(config);
+        
+        // 更新配置组件中的显示
+        ConfigComponent.updateAnswerLength(answer.length);
+        
         // 保存答案
         StorageUtil.setItem('wordle_answer', answer);
-        alert('答案保存成功');
+        alert('答案保存成功，系统已自动调整答案单词长度配置');
     },
     
     // 判定猜词
@@ -190,6 +244,10 @@ window.App = {
     
     // 应用模式
     applyMode: function(mode) {
+        // 切换模式区域显示
+        document.getElementById('noteMode').classList.toggle('active', mode === 'note');
+        document.getElementById('judgeMode').classList.toggle('active', mode === 'judge');
+        
         if (mode === 'judge') {
             this.renderJudgeHistory();
         }

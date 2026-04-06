@@ -81,5 +81,10 @@ window.ConfigComponent = {
             min: config.minGuessLength,
             max: config.maxGuessLength
         };
+    },
+    
+    // 更新答案长度显示
+    updateAnswerLength: function(length) {
+        document.getElementById('answerLength').value = length;
     }
 };

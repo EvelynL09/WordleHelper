@@ -25,6 +25,11 @@ window.GuessesComponent = {
                     this.addGuess();
                 }
             });
+            
+            // 粘贴导入功能
+            newGuessInput.addEventListener('paste', (e) => {
+                this.handlePaste(e);
+            });
         }
         
         // 正确计数加减
@@ -335,5 +340,39 @@ window.GuessesComponent = {
         StorageUtil.saveGuesses(guesses);
         this.renderGuesses(guesses);
         this.recalculateLetterStatus();
+    },
+    
+    // 处理粘贴事件
+    handlePaste: function(e) {
+        e.preventDefault();
+        const clipboardData = e.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text').trim();
+        
+        // 解析粘贴的文本，格式为 "单词 颜色emoji序列"
+        const match = pastedText.match(/^([a-zA-Z]+)\s+([🟩🟨⬜●○×]+)$/);
+        if (match) {
+            const word = match[1].toLowerCase();
+            const feedback = match[2];
+            
+            // 解析反馈emoji，计算正确和存在的数量
+            const preset = StorageUtil.getFeedbackPreset();
+            const feedbackConfig = window.Constants.FEEDBACK_PRESETS[preset] || window.Constants.FEEDBACK_PRESETS.DEFAULT;
+            
+            let correct = 0;
+            let present = 0;
+            
+            for (const emoji of feedback) {
+                if (emoji === feedbackConfig.CORRECT) {
+                    correct++;
+                } else if (emoji === feedbackConfig.PRESENT) {
+                    present++;
+                }
+            }
+            
+            // 填充到输入框
+            document.getElementById('newGuessInput').value = word;
+            document.getElementById('correctCount').value = correct;
+            document.getElementById('presentCount').value = present;
+        }
     }
 };

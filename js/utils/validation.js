@@ -111,7 +111,7 @@ window.ValidatorUtil = {
         }
         
         // 生成合并后的结果
-        const mergedResult = this.mergeResults(tempResult, feedback);
+        const mergedResult = this.mergeResults(tempResult, feedback, guessLower);
         
         return {
             letterResults: letterResults,
@@ -121,39 +121,67 @@ window.ValidatorUtil = {
     },
     
     // 合并结果
-    mergeResults: function(results, feedback) {
-        // 如果没有传入feedback参数，使用默认配置
-        if (!feedback) {
-            feedback = window.Constants.FEEDBACK_PRESETS.DEFAULT;
+    mergeResults: function(results, feedback, letters) {
+        if (results.length === 0) {
+            return feedback.ABSENT; // 空猜测返回不存在
         }
         
-        let correctCount = 0;
-        let presentCount = 0;
-        let hasMatch = false;
+        // 统计每个字母的结果状态
+        const letterStatus = {};
         
-        for (const result of results) {
+        for (let i = 0; i < letters.length; i++) {
+            const letter = letters[i];
+            const result = results[i];
+            
+            if (!letterStatus[letter]) {
+                letterStatus[letter] = {
+                    correct: false,
+                    present: false,
+                    absent: false
+                };
+            }
+            
             if (result === feedback.CORRECT) {
-                correctCount++;
-                hasMatch = true;
+                letterStatus[letter].correct = true;
             } else if (result === feedback.PRESENT) {
-                presentCount++;
-                hasMatch = true;
+                letterStatus[letter].present = true;
+            } else if (result === feedback.ABSENT) {
+                letterStatus[letter].absent = true;
             }
         }
         
-        if (!hasMatch) {
+        // 根据文档逻辑生成合并结果
+        const merged = [];
+        
+        // 情况A：所有字母都不存在，返回一个⬜
+        const allAbsent = Object.values(letterStatus).every(status => 
+            status.absent && !status.correct && !status.present
+        );
+        if (allAbsent) {
             return feedback.ABSENT;
         }
         
-        let merged = '';
-        for (let i = 0; i < correctCount; i++) {
-            merged += feedback.CORRECT;
-        }
-        for (let i = 0; i < presentCount; i++) {
-            merged += feedback.PRESENT;
+        // 情况B：n个🟩正确 + m个🟨存在
+        // 先添加所有🟩，再添加所有🟨
+        for (const letter in letterStatus) {
+            const status = letterStatus[letter];
+            
+            // 某一个字母如果有至少一个`🟩 正确`就不需要管其他🟨🟩，直接保留一个`🟩 正确`
+            if (status.correct) {
+                merged.push(feedback.CORRECT);
+            }
         }
         
-        return merged;
+        for (const letter in letterStatus) {
+            const status = letterStatus[letter];
+            
+            // 否则如果存在`🟨 存在`，提供`🟨 存在`
+            if (status.present && !status.correct) {
+                merged.push(feedback.PRESENT);
+            }
+        }
+        
+        return merged.join('');
     },
     
     // 验证单词长度
