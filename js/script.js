@@ -203,6 +203,9 @@ window.App = {
     // 配置更新回调
     onConfigChange: function(config) {
         StatusComponent.updateStatusInputs();
+        if (window.GuessesComponent) {
+            window.GuessesComponent.updateLabels();
+        }
     },
     
     // 字母状态更新回调

@@ -100,20 +100,29 @@ window.ParserUtil = {
     
     // 生成反馈emoji
     generateFeedback: function(word, green, yellow) {
-        if (green === 0 && yellow === 0) {
-            return '⬜'.repeat(word.length);
+        // 获取当前颜色反馈配置
+        let preset = 'DEFAULT';
+        let feedback = window.Constants.FEEDBACK_PRESETS.DEFAULT;
+        
+        if (typeof StorageUtil !== 'undefined' && StorageUtil.getFeedbackPreset) {
+            preset = StorageUtil.getFeedbackPreset();
+            feedback = window.Constants.FEEDBACK_PRESETS[preset] || window.Constants.FEEDBACK_PRESETS.DEFAULT;
         }
         
-        let feedback = '';
+        if (green === 0 && yellow === 0) {
+            return feedback.ABSENT.repeat(word.length);
+        }
+        
+        let result = '';
         for (let i = 0; i < word.length; i++) {
             if (i < green) {
-                feedback += '🟩';
+                result += feedback.CORRECT;
             } else if (i < green + yellow) {
-                feedback += '🟨';
+                result += feedback.PRESENT;
             } else {
-                feedback += '⬜';
+                result += feedback.ABSENT;
             }
         }
-        return feedback;
+        return result;
     }
 };

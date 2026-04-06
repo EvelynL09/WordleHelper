@@ -10,40 +10,78 @@ window.GuessesComponent = {
     // 设置事件监听器
     setupEventListeners: function() {
         // 添加猜词按钮
-        document.getElementById('addGuessBtn').addEventListener('click', () => {
-            this.addGuess();
-        });
+        const addGuessBtn = document.getElementById('addGuessBtn');
+        if (addGuessBtn) {
+            addGuessBtn.addEventListener('click', () => {
+                this.addGuess();
+            });
+        }
         
         // 回车键提交
-        document.getElementById('newGuessInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addGuess();
-            }
-        });
+        const newGuessInput = document.getElementById('newGuessInput');
+        if (newGuessInput) {
+            newGuessInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.addGuess();
+                }
+            });
+        }
         
-        // 绿色计数加减
-        document.getElementById('greenMinus').addEventListener('click', () => {
-            this.updateCount('greenCount', -1);
-        });
-        document.getElementById('greenPlus').addEventListener('click', () => {
-            this.updateCount('greenCount', 1);
-        });
+        // 正确计数加减
+        const correctMinus = document.getElementById('correctMinus');
+        if (correctMinus) {
+            correctMinus.addEventListener('click', () => {
+                this.updateCount('correctCount', -1);
+            });
+        }
+        const correctPlus = document.getElementById('correctPlus');
+        if (correctPlus) {
+            correctPlus.addEventListener('click', () => {
+                this.updateCount('correctCount', 1);
+            });
+        }
         
-        // 黄色计数加减
-        document.getElementById('yellowMinus').addEventListener('click', () => {
-            this.updateCount('yellowCount', -1);
-        });
-        document.getElementById('yellowPlus').addEventListener('click', () => {
-            this.updateCount('yellowCount', 1);
-        });
+        // 存在计数加减
+        const presentMinus = document.getElementById('presentMinus');
+        if (presentMinus) {
+            presentMinus.addEventListener('click', () => {
+                this.updateCount('presentCount', -1);
+            });
+        }
+        const presentPlus = document.getElementById('presentPlus');
+        if (presentPlus) {
+            presentPlus.addEventListener('click', () => {
+                this.updateCount('presentCount', 1);
+            });
+        }
+        
+        // 初始化标签文本
+        this.updateLabels();
+    },
+    
+    // 更新标签文本
+    updateLabels: function() {
+        const preset = StorageUtil.getFeedbackPreset();
+        const feedback = window.Constants.FEEDBACK_PRESETS[preset] || window.Constants.FEEDBACK_PRESETS.DEFAULT;
+        
+        const correctLabel = document.getElementById('correctLabel');
+        if (correctLabel) {
+            correctLabel.textContent = feedback.CORRECT + '：';
+        }
+        const presentLabel = document.getElementById('presentLabel');
+        if (presentLabel) {
+            presentLabel.textContent = feedback.PRESENT + '：';
+        }
     },
     
     // 更新计数
     updateCount: function(id, delta) {
         const input = document.getElementById(id);
-        const currentValue = parseInt(input.value) || 0;
-        const newValue = Math.max(0, currentValue + delta);
-        input.value = newValue;
+        if (input) {
+            const currentValue = parseInt(input.value) || 0;
+            const newValue = Math.max(0, currentValue + delta);
+            input.value = newValue;
+        }
     },
     
     // 加载猜词记录
@@ -114,12 +152,16 @@ window.GuessesComponent = {
     // 添加猜词记录
     addGuess: function() {
         const wordInput = document.getElementById('newGuessInput');
-        const greenInput = document.getElementById('greenCount');
-        const yellowInput = document.getElementById('yellowCount');
+        const correctInput = document.getElementById('correctCount');
+        const presentInput = document.getElementById('presentCount');
+        
+        if (!wordInput || !correctInput || !presentInput) {
+            return;
+        }
         
         const word = wordInput.value.toLowerCase().trim();
-        const green = parseInt(greenInput.value) || 0;
-        const yellow = parseInt(yellowInput.value) || 0;
+        const correct = parseInt(correctInput.value) || 0;
+        const present = parseInt(presentInput.value) || 0;
         
         if (!word) {
             alert('请输入猜测单词');
@@ -140,14 +182,14 @@ window.GuessesComponent = {
         }
         
         // 生成反馈emoji
-        const feedback = ParserUtil.generateFeedback(word, green, yellow);
+        const feedback = ParserUtil.generateFeedback(word, correct, present);
         
         // 添加到猜词记录
         const guesses = StorageUtil.getGuesses();
         guesses.push({
             word: word,
-            green: green,
-            yellow: yellow,
+            correct: correct,
+            present: present,
             feedback: feedback
         });
         
@@ -155,12 +197,12 @@ window.GuessesComponent = {
         this.renderGuesses(guesses);
         
         // 更新字母状态
-        this.updateLetterStatus(word, green, yellow);
+        this.updateLetterStatus(word, correct, present);
         
         // 清空输入
         wordInput.value = '';
-        greenInput.value = '0';
-        yellowInput.value = '0';
+        correctInput.value = '0';
+        presentInput.value = '0';
     },
     
     // 编辑猜词记录
@@ -168,9 +210,15 @@ window.GuessesComponent = {
         const guesses = StorageUtil.getGuesses();
         const guess = guesses[index];
         
-        document.getElementById('newGuessInput').value = guess.word;
-        document.getElementById('greenCount').value = guess.green;
-        document.getElementById('yellowCount').value = guess.yellow;
+        const newGuessInput = document.getElementById('newGuessInput');
+        const correctCount = document.getElementById('correctCount');
+        const presentCount = document.getElementById('presentCount');
+        
+        if (newGuessInput && correctCount && presentCount) {
+            newGuessInput.value = guess.word;
+            correctCount.value = guess.correct || guess.green || 0;
+            presentCount.value = guess.present || guess.yellow || 0;
+        }
         
         // 删除原记录
         this.deleteGuess(index);
@@ -188,10 +236,10 @@ window.GuessesComponent = {
     },
     
     // 更新字母状态
-    updateLetterStatus: function(word, green, yellow) {
+    updateLetterStatus: function(word, correct, present) {
         const letterStatus = StorageUtil.getLetterStatus();
         
-        if (green === 0 && yellow === 0) {
+        if (correct === 0 && present === 0) {
             // 情况A：所有字母都不存在
             for (const char of word) {
                 if (letterStatus[char].exists === 1) {
@@ -203,8 +251,8 @@ window.GuessesComponent = {
                 letterStatus[char].position = -1;
                 letterStatus[char].excludedPositions = [];
             }
-        } else if (yellow > 0 && green === 0) {
-            // 情况B：只有黄色
+        } else if (present > 0 && correct === 0) {
+            // 情况B：只有存在但位置不正确
             for (let i = 0; i < word.length; i++) {
                 const char = word[i];
                 const position = i + 1;
@@ -215,7 +263,7 @@ window.GuessesComponent = {
                     letterStatus[char].exists = 1;
                 }
             }
-        } else if (green + yellow === word.length) {
+        } else if (correct + present === word.length) {
             // 情况C：所有字母都存在
             for (const char of word) {
                 letterStatus[char].exists = 1;
@@ -236,7 +284,7 @@ window.GuessesComponent = {
         const letterStatus = StorageUtil.getDefaultLetterStatus();
         
         guesses.forEach(guess => {
-            this.updateLetterStatus(guess.word, guess.green, guess.yellow);
+            this.updateLetterStatus(guess.word, guess.correct || guess.green || 0, guess.present || guess.yellow || 0);
         });
     },
     

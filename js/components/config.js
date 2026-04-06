@@ -12,6 +12,7 @@ window.ConfigComponent = {
         document.getElementById('answerLength').value = config.answerLength;
         document.getElementById('minGuessLength').value = config.minGuessLength;
         document.getElementById('maxGuessLength').value = config.maxGuessLength;
+        document.getElementById('feedbackPreset').value = config.feedbackPreset || window.Constants.DEFAULT_FEEDBACK_PRESET;
     },
     
     // 设置事件监听器
@@ -30,6 +31,11 @@ window.ConfigComponent = {
         document.getElementById('maxGuessLength').addEventListener('change', () => {
             this.updateConfig();
         });
+        
+        // 颜色反馈配置输入
+        document.getElementById('feedbackPreset').addEventListener('change', () => {
+            this.updateConfig();
+        });
     },
     
     // 更新配置
@@ -37,7 +43,8 @@ window.ConfigComponent = {
         const config = {
             answerLength: parseInt(document.getElementById('answerLength').value) || 5,
             minGuessLength: parseInt(document.getElementById('minGuessLength').value) || 4,
-            maxGuessLength: parseInt(document.getElementById('maxGuessLength').value) || 10
+            maxGuessLength: parseInt(document.getElementById('maxGuessLength').value) || 10,
+            feedbackPreset: document.getElementById('feedbackPreset').value || window.Constants.DEFAULT_FEEDBACK_PRESET
         };
         
         // 验证配置

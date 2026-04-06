@@ -68,8 +68,21 @@ window.StorageUtil = {
         return this.getItem('wordle_config', {
             answerLength: 5,
             minGuessLength: 4,
-            maxGuessLength: 10
+            maxGuessLength: 10,
+            feedbackPreset: window.Constants.DEFAULT_FEEDBACK_PRESET
         });
+    },
+    
+    // 存储颜色反馈配置
+    saveFeedbackPreset: function(preset) {
+        const config = this.getConfig();
+        config.feedbackPreset = preset;
+        this.saveConfig(config);
+    },
+    
+    // 获取颜色反馈配置
+    getFeedbackPreset: function() {
+        return this.getConfig().feedbackPreset || window.Constants.DEFAULT_FEEDBACK_PRESET;
     },
     
     // 存储当前模式

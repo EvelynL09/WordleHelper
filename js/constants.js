@@ -20,12 +20,22 @@ window.Constants = {
         NOT_EXIST: -1
     },
     
-    // 颜色反馈常量
-    FEEDBACK: {
-        CORRECT: '🟩',
-        PRESENT: '🟨',
-        ABSENT: '⬜'
+    // 颜色反馈配置预设
+    FEEDBACK_PRESETS: {
+        DEFAULT: {
+            CORRECT: '🟩',
+            PRESENT: '🟨',
+            ABSENT: '⬜'
+        },
+        CUSTOM: {
+            CORRECT: '●',
+            PRESENT: '○',
+            ABSENT: '⬜'
+        }
     },
+    
+    // 默认颜色反馈配置
+    DEFAULT_FEEDBACK_PRESET: 'DEFAULT',
     
     // 存储键名常量
     STORAGE_KEYS: {

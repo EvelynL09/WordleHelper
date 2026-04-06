@@ -61,6 +61,15 @@ window.ValidatorUtil = {
         const letterResults = [];
         const answerCounts = {};
         
+        // 获取当前颜色反馈配置
+        let preset = 'DEFAULT';
+        let feedback = window.Constants.FEEDBACK_PRESETS.DEFAULT;
+        
+        if (typeof StorageUtil !== 'undefined' && StorageUtil.getFeedbackPreset) {
+            preset = StorageUtil.getFeedbackPreset();
+            feedback = window.Constants.FEEDBACK_PRESETS[preset] || window.Constants.FEEDBACK_PRESETS.DEFAULT;
+        }
+        
         // 统计答案中每个字母的出现次数
         for (const char of answerLower) {
             answerCounts[char] = (answerCounts[char] || 0) + 1;
@@ -72,7 +81,7 @@ window.ValidatorUtil = {
         
         for (let i = 0; i < guessLower.length; i++) {
             if (i < answerLower.length && guessLower[i] === answerLower[i]) {
-                tempResult.push('🟩');
+                tempResult.push(feedback.CORRECT);
                 tempAnswer[i] = null; // 标记为已处理
                 answerCounts[guessLower[i]]--;
             } else {
@@ -85,10 +94,10 @@ window.ValidatorUtil = {
             if (tempResult[i] === undefined) {
                 const char = guessLower[i];
                 if (answerCounts[char] > 0) {
-                    tempResult[i] = '🟨';
+                    tempResult[i] = feedback.PRESENT;
                     answerCounts[char]--;
                 } else {
-                    tempResult[i] = '⬜';
+                    tempResult[i] = feedback.ABSENT;
                 }
             }
         }
@@ -102,7 +111,7 @@ window.ValidatorUtil = {
         }
         
         // 生成合并后的结果
-        const mergedResult = this.mergeResults(tempResult);
+        const mergedResult = this.mergeResults(tempResult, feedback);
         
         return {
             letterResults: letterResults,
@@ -112,31 +121,36 @@ window.ValidatorUtil = {
     },
     
     // 合并结果
-    mergeResults: function(results) {
-        let greenCount = 0;
-        let yellowCount = 0;
+    mergeResults: function(results, feedback) {
+        // 如果没有传入feedback参数，使用默认配置
+        if (!feedback) {
+            feedback = window.Constants.FEEDBACK_PRESETS.DEFAULT;
+        }
+        
+        let correctCount = 0;
+        let presentCount = 0;
         let hasMatch = false;
         
         for (const result of results) {
-            if (result === '🟩') {
-                greenCount++;
+            if (result === feedback.CORRECT) {
+                correctCount++;
                 hasMatch = true;
-            } else if (result === '🟨') {
-                yellowCount++;
+            } else if (result === feedback.PRESENT) {
+                presentCount++;
                 hasMatch = true;
             }
         }
         
         if (!hasMatch) {
-            return '⬜';
+            return feedback.ABSENT;
         }
         
         let merged = '';
-        for (let i = 0; i < greenCount; i++) {
-            merged += '🟩';
+        for (let i = 0; i < correctCount; i++) {
+            merged += feedback.CORRECT;
         }
-        for (let i = 0; i < yellowCount; i++) {
-            merged += '🟨';
+        for (let i = 0; i < presentCount; i++) {
+            merged += feedback.PRESENT;
         }
         
         return merged;
