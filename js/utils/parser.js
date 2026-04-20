@@ -1,130 +1,138 @@
 // 数据解析工具
 window.ParserUtil = {
-    // 解析分享文本
-    parseShareText: function(text) {
-        const lines = text.trim().split('\n');
-        const guesses = [];
-        const letterStatus = StorageUtil.getDefaultLetterStatus();
-        let parsingGuesses = true;
-        
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (!trimmedLine) continue;
-            
-            // 检查是否开始解析字母状态
-            if (trimmedLine.match(/^[a-z]:/i)) {
-                parsingGuesses = false;
-            }
-            
-            if (parsingGuesses) {
-                // 解析猜词记录
-                const match = trimmedLine.match(/^([a-z]+)\s+([🟩🟨⬜●○×]+)$/i);
-                if (match) {
-                    const word = match[1].toLowerCase();
-                    const feedback = match[2];
-                    
-                    // 计算正确和存在的数量
-                    const greenCount = (feedback.match(/🟩|●/g) || []).length;
-                    const yellowCount = (feedback.match(/🟨|○/g) || []).length;
-                    
-                    guesses.push({
-                        word: word,
-                        green: greenCount,
-                        yellow: yellowCount,
-                        feedback: feedback
-                    });
-                }
-            } else {
-                // 解析字母状态
-                const match = trimmedLine.match(/^([a-z]):\s*([-101])\s*([-10-9]+)\s*\[([\d, ]*)\]$/i);
-                if (match) {
-                    const letter = match[1].toLowerCase();
-                    const exists = parseInt(match[2]);
-                    const position = parseInt(match[3]);
-                    const excludedPositions = match[4]
-                        .split(',')
-                        .map(p => parseInt(p.trim()))
-                        .filter(p => !isNaN(p));
-                    
-                    if (letterStatus[letter]) {
-                        letterStatus[letter] = {
-                            exists: exists,
-                            position: position,
-                            excludedPositions: excludedPositions
-                        };
-                    }
-                }
-            }
-        }
-        
-        return { guesses, letterStatus };
-    },
-    
-    // 生成分享文本
-    generateShareText: function(guesses, letterStatus) {
-        let text = '';
-        
-        // 添加猜词记录
-        guesses.forEach(guess => {
-            text += `${guess.word} ${guess.feedback}\n`;
-        });
-        
-        text += '\n';
-        
-        // 添加字母状态
-        Object.entries(letterStatus).forEach(([letter, status]) => {
-            if (status.exists !== -1 || status.position !== 0 || status.excludedPositions.length > 0) {
-                text += `${letter}: ${status.exists} ${status.position} [${status.excludedPositions.join(', ')}]\n`;
-            }
-        });
-        
-        return text.trim();
-    },
-    
-    // 解析单个猜词记录
-    parseGuess: function(text) {
-        const match = text.trim().match(/^([a-z]+)\s+([🟩🟨⬜]+)$/i);
+  // 解析分享文本
+  parseShareText: function (text) {
+    const lines = text.trim().split("\n");
+    const guesses = [];
+    const letterStatus = StorageUtil.getDefaultLetterStatus();
+    let parsingGuesses = true;
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) continue;
+
+      // 检查是否开始解析字母状态
+      if (trimmedLine.match(/^[a-z]:/i)) {
+        parsingGuesses = false;
+      }
+
+      if (parsingGuesses) {
+        // 解析猜词记录
+        const match = trimmedLine.match(/^([a-z]+)\s+([🟩🟨⬜●○×]+)$/i);
         if (match) {
-            const word = match[1].toLowerCase();
-            const feedback = match[2];
-            const greenCount = (feedback.match(/🟩/g) || []).length;
-            const yellowCount = (feedback.match(/🟨/g) || []).length;
-            
-            return {
-                word: word,
-                green: greenCount,
-                yellow: yellowCount,
-                feedback: feedback
+          const word = match[1].toLowerCase();
+          const feedback = match[2];
+
+          // 计算正确和存在的数量
+          const greenCount = (feedback.match(/🟩|●/g) || []).length;
+          const yellowCount = (feedback.match(/🟨|○/g) || []).length;
+
+          guesses.push({
+            word: word,
+            green: greenCount,
+            yellow: yellowCount,
+            feedback: feedback,
+          });
+        }
+      } else {
+        // 解析字母状态
+        const match = trimmedLine.match(
+          /^([a-z]):\s*([-101])\s*([-10-9]+)\s*\[([\d, ]*)\]$/i,
+        );
+        if (match) {
+          const letter = match[1].toLowerCase();
+          const exists = parseInt(match[2]);
+          const position = parseInt(match[3]);
+          const excludedPositions = match[4]
+            .split(",")
+            .map((p) => parseInt(p.trim()))
+            .filter((p) => !isNaN(p));
+
+          if (letterStatus[letter]) {
+            letterStatus[letter] = {
+              exists: exists,
+              position: position,
+              excludedPositions: excludedPositions,
             };
+          }
         }
-        return null;
-    },
-    
-    // 生成反馈emoji
-    generateFeedback: function(word, green, yellow) {
-        // 获取当前颜色反馈配置
-        let preset = 'DEFAULT';
-        let feedback = window.Constants.FEEDBACK_PRESETS.DEFAULT;
-        
-        if (typeof StorageUtil !== 'undefined' && StorageUtil.getFeedbackPreset) {
-            preset = StorageUtil.getFeedbackPreset();
-            feedback = window.Constants.FEEDBACK_PRESETS[preset] || window.Constants.FEEDBACK_PRESETS.DEFAULT;
-        }
-        
-        if (green === 0 && yellow === 0) {
-            return feedback.ABSENT.repeat(word.length);
-        }
-        
-        let result = '';
-        for (let i = 0; i < word.length; i++) {
-            if (i < green) {
-                result += feedback.CORRECT;
-            } else if (i < green + yellow) {
-                result += feedback.PRESENT;
-            } else {
-                result += feedback.ABSENT;
-            }
-        }
-        return result;
+      }
     }
+
+    return { guesses, letterStatus };
+  },
+
+  // 生成分享文本
+  generateShareText: function (guesses, letterStatus) {
+    let text = "";
+
+    // 添加猜词记录
+    guesses.forEach((guess) => {
+      text += `${guess.word} ${guess.feedback}\n`;
+    });
+
+    text += "\n";
+
+    // 添加字母状态
+    Object.entries(letterStatus).forEach(([letter, status]) => {
+      if (
+        status.exists !== -1 ||
+        status.position !== 0 ||
+        status.excludedPositions.length > 0
+      ) {
+        text += `${letter}: ${status.exists} ${status.position} [${status.excludedPositions.join(", ")}]\n`;
+      }
+    });
+
+    return text.trim();
+  },
+
+  // 解析单个猜词记录
+  parseGuess: function (text) {
+    const match = text.trim().match(/^([a-z]+)\s+([🟩🟨⬜]+)$/i);
+    if (match) {
+      const word = match[1].toLowerCase();
+      const feedback = match[2];
+      const greenCount = (feedback.match(/🟩/g) || []).length;
+      const yellowCount = (feedback.match(/🟨/g) || []).length;
+
+      return {
+        word: word,
+        green: greenCount,
+        yellow: yellowCount,
+        feedback: feedback,
+      };
+    }
+    return null;
+  },
+
+  // 生成反馈 emoji
+  generateFeedback: function (word, green, yellow) {
+    // 获取当前颜色反馈配置
+    let preset = "DEFAULT";
+    let feedback = window.Constants.FEEDBACK_PRESETS.DEFAULT;
+
+    if (typeof StorageUtil !== "undefined" && StorageUtil.getFeedbackPreset) {
+      preset = StorageUtil.getFeedbackPreset();
+      feedback =
+        window.Constants.FEEDBACK_PRESETS[preset] ||
+        window.Constants.FEEDBACK_PRESETS.DEFAULT;
+    }
+
+    // 情况 A：没有任何字母正确或存在，只返回一个 ABSENT
+    if (green === 0 && yellow === 0) {
+      return feedback.ABSENT;
+    }
+
+    // 情况 B：返回 green 个 CORRECT + yellow 个 PRESENT
+    // 反馈序列长度 = green + yellow（不是单词长度）
+    let result = "";
+    for (let i = 0; i < green; i++) {
+      result += feedback.CORRECT;
+    }
+    for (let i = 0; i < yellow; i++) {
+      result += feedback.PRESENT;
+    }
+    return result;
+  },
 };

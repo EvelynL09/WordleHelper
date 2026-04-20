@@ -159,6 +159,31 @@
         </div>
     </div>
     
+    <!-- 版本信息展示 -->
+    <div class="version-info">
+        <span class="version-item">版本: <span id="appVersion">{{APP_VERSION}}</span></span>
+        <span class="version-item">提交: <span id="gitCommit">{{GIT_COMMIT}}</span></span>
+        <span class="version-item">构建: <span id="buildTime">{{BUILD_TIME}}</span></span>
+        <span class="version-item">分支: <span id="deployBranch">{{DEPLOY_BRANCH}}</span></span>
+    </div>
+    
+    <script>
+        (function() {
+            var versionInfo = {
+                appVersion: '{{APP_VERSION}}',
+                gitCommit: '{{GIT_COMMIT}}',
+                buildTime: '{{BUILD_TIME}}',
+                deployBranch: '{{DEPLOY_BRANCH}}'
+            };
+            console.log('%c=== 版本溯源信息 ===', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+            console.log('%c版本号: ', 'color: #2196F3;', versionInfo.appVersion);
+            console.log('%cGit提交: ', 'color: #2196F3;', versionInfo.gitCommit);
+            console.log('%c构建时间: ', 'color: #2196F3;', versionInfo.buildTime);
+            console.log('%c部署分支: ', 'color: #2196F3;', versionInfo.deployBranch);
+            console.log('%c========================', 'color: #4CAF50; font-weight: bold;');
+        })();
+    </script>
+    
     <!-- 脚本加载 -->
     <script src="js/constants.js"></script>
     <script src="js/utils/storage.js"></script>

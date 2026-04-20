@@ -130,34 +130,124 @@
 /* 猜词记录项样式 */
 .guess-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 10px;
     border-bottom: 1px solid #eee;
     transition: background-color 0.3s;
+    gap: 20px;
 }
 
 .guess-item:hover {
     background-color: #f5f5f5;
 }
 
-.guess-word {
+.guess-left-panel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 200px;
+}
+
+/* 拖动排序按钮样式 */
+.guess-drag-handle {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #999;
+    font-size: 16px;
+    cursor: grab;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.guess-drag-handle:hover {
+    background-color: #e0e0e0;
+    color: #666;
+}
+
+.guess-drag-handle:active {
+    cursor: grabbing;
+}
+
+.guess-word-container {
+    display: flex;
+    gap: 2px;
     font-weight: bold;
     font-size: 16px;
+    min-width: 0;
+    flex: 1;
+}
+
+.guess-letter {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 2px 0;
+    background-color: #f9f9f9;
+    flex-shrink: 0;
+}
+
+/* 字母状态联动样式 */
+.guess-letter.letter-excluded {
+    text-decoration: line-through !important;
+    color: #333333 !important;
+    background-color: #8a8a8a !important;
+    border-color: #666666 !important;
+    font-weight: 900;
+}
+
+.guess-letter.letter-correct {
+    background-color: #2da44e !important;
+    color: white !important;
+    border-color: #1a7f37 !important;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+}
+
+.guess-letter.letter-present {
+    background-color: #e69900 !important;
+    color: white !important;
+    border-color: #cc8800 !important;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+}
+
+.guess-letter.letter-uncertain {
+    color: #999 !important;
+    border-color: #ddd !important;
+    background-color: #fafafa !important;
+}
+
+.guess-right-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
 }
 
 .guess-feedback {
     display: flex;
-    gap: 5px;
+    gap: 2px;
+    align-items: center;
 }
 
 .feedback-emoji {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
     font-size: 18px;
 }
 
 .guess-actions {
     display: flex;
     gap: 5px;
+    margin-left: auto;
 }
 
 .guess-actions button {

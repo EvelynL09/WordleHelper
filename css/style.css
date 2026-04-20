@@ -10,6 +10,7 @@ body {
     background-color: #f5f5f5;
     color: #333;
     line-height: 1.6;
+    padding-bottom: 50px;
 }
 
 .container {
@@ -277,32 +278,38 @@ body {
     cursor: pointer;
 }
 
-/* 响应式设计 */
+/* 版本信息展示 */
+.version-info {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 8px 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 12px;
+    color: #6c757d;
+    z-index: 1000;
+}
+
+.version-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.version-item span:last-child {
+    font-family: monospace;
+    color: #495057;
+}
+
 @media (max-width: 768px) {
-    .status-bar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .config-options {
-        flex-direction: column;
-    }
-    
-    .note-content {
-        flex-direction: column;
-    }
-    
-    .right-panel {
-        width: 100%;
-    }
-    
-    .guess-input-section {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .answer-input-group,
-    .judge-input-group {
-        flex-direction: column;
+    .version-info {
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 11px;
     }
 }
