@@ -1,12 +1,17 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const ROOT_DIR = path.join(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const HTML_FILE = path.join(ROOT_DIR, 'index.html');
 const DIST_HTML_FILE = path.join(DIST_DIR, 'index.html');
 
-const version = require('../package.json').version;
+const { version } = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
 const commitRef = process.env.COMMIT_REF || process.env.GIT_COMMIT || 'local-dev';
 const branch = process.env.BRANCH || 'local-dev';
 const buildTimestamp = process.env.BUILD_TIMESTAMP || Math.floor(Date.now() / 1000).toString();
@@ -63,9 +68,18 @@ const jsFiles = ['constants.js', 'utils/storage.js', 'utils/parser.js', 'utils/v
     'components/status.js', 'components/config.js', 'components/guesses.js', 'components/letters.js',
     'components/validator.js', 'components/share.js', 'script.js'];
 
+if (fs.existsSync(jsDir)) {
+    fs.rmSync(jsDir, { recursive: true, force: true });
+    fs.mkdirSync(jsDir, { recursive: true });
+}
+
 jsFiles.forEach(file => {
     const src = path.join(ROOT_DIR, 'js', file);
-    const dest = path.join(jsDir, path.basename(file));
+    const dest = path.join(jsDir, file);
+    const destDir = path.dirname(dest);
+    if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+    }
     if (fs.existsSync(src)) {
         fs.copyFileSync(src, dest);
     }
