@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# 这些环境变量会在Netlify构建时自动设置
+# COMMIT_REF - Git提交哈希
+# BRANCH - 部署分支名称
+# BUILD_TIMESTAMP - 构建时间戳
